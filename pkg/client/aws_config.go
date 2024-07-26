@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 )
 
 const DefaultAwsRegion = "us-east-1"
@@ -14,9 +15,13 @@ func LoadAWSConfig(ctx context.Context, region string, profile string) (aws.Conf
 		cfg aws.Config
 		err error
 	)
-
 	if profile != "" {
-		cfg, err = config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(profile))
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithSharedConfigProfile(profile),
+			config.WithAssumeRoleCredentialOptions(func(options *stscreds.AssumeRoleOptions) {
+				options.TokenProvider = func() (string, error) {
+					return stscreds.StdinTokenProvider()
+				}
+			}))
 	} else {
 		cfg, err = config.LoadDefaultConfig(ctx)
 	}
